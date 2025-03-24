@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheat Classification</title>
+
+    <!-- Bootstrap for styling -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+    <script>
+        let model;
+
+        // Load the model from the 'tfjs_model' directory
+        async function loadModel() {
+            try {
+                model = await tf.loadLayersModel("https://github.com/M-Tayyab06/tfjs-model/blob/main/model.json");
+                console.log("Model loaded successfully");
+                document.getElementById("status").innerText = "Model Loaded!";
+            } catch (error) {
+                console.error("Error loading model:", error);
+                document.getElementById("status").innerText = "Failed to Load Model!";
+            }
+        }
+
+        loadModel();
+
+        // Function to handle image selection
+        function previewFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                document.getElementById("preview").src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Function to make prediction
+        async function makePrediction() {
+            if (!model) {
+                alert("Model not loaded yet! Please wait.");
+                return;
+            }
+
+            const imgElement = document.getElementById("preview");
+            if (!imgElement.src) {
+                alert("Please upload an image first.");
+                return;
+            }
+
+            // Preprocess the image
+            let tensor = tf.browser.fromPixels(imgElement)
+                .resizeNearestNeighbor([224, 224]) // Adjust based on model input size
+                .toFloat()
+                .expandDims();
+
+            // Make prediction
+            const prediction = model.predict(tensor);
+            const outputData = await prediction.data();
+            console.log("Prediction:", outputData);
+
+            // Display the result
+            document.getElementById("result").innerText = `Prediction: ${outputData}`;
+        }
+    </script>
+</head>
+
+<body class="container text-center mt-4">
+    <h2>Wheat Classification</h2>
+    <p id="status">Loading model...</p>
+
+    <!-- File upload input -->
+    <input type="file" id="imageUpload" accept="image/*" class="form-control mt-3" onchange="previewFile(event)">
+
+    <!-- Image preview -->
+    <img id="preview" src="" alt="Image Preview" class="img-fluid mt-3" style="max-width: 300px; display: block; margin: auto;">
+
+    <!-- Predict button -->
+    <button class="btn btn-primary mt-3" onclick="makePrediction()">Predict</button>
+
+    <!-- Prediction result -->
+    <h3 class="mt-3" id="result"></h3>
+</body>
+
+</html>
